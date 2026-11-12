@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#10131d">
+<title>Meme Hunter Bot — Demo</title>
+<style>
+:root{color-scheme:dark;--bg:#10131d;--panel:#191f2d;--muted:#9ba8bd;--line:#2a3448;--green:#42d392;--red:#ff6b78;--yellow:#ffc857;--blue:#7da7ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#eef3fb;font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{padding:22px 16px 14px;background:linear-gradient(135deg,#1d2940,#171b2b);border-bottom:1px solid var(--line)}
+h1{font-size:23px;margin:0 0 6px}p{color:var(--muted);line-height:1.45;margin:6px 0}
+.wrap{max-width:1100px;margin:auto;padding:14px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:12px}
+.k{font-size:12px;color:var(--muted)}.v{font-size:22px;font-weight:750;margin-top:5px}
+button,select,input{font:inherit;border-radius:10px;border:1px solid var(--line);background:#202a3c;color:#eef3fb;padding:11px}
+button{cursor:pointer;font-weight:650}button.primary{background:#2864d7;border-color:#2864d7}button.danger{background:#512631;border-color:#75404b}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.controls button{flex:1}
+.status{font-size:13px;color:var(--muted);padding:8px 0}
+.pill{display:inline-block;border-radius:99px;padding:4px 8px;font-size:11px;background:#29344a;color:#cbd8ec}
+.good{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--yellow)}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:10px 7px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--muted);font-weight:600}
+.scroll{overflow-x:auto}.token{font-weight:700}.small{font-size:12px;color:var(--muted)}
+label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}.field{min-width:130px;flex:1}
+input{width:100%;max-width:160px}
+a{color:#9bbcff}.notice{border-left:3px solid var(--yellow);padding:9px 11px;background:#292619;border-radius:7px;color:#f6e6b8;font-size:12px;line-height:1.5}
+footer{color:var(--muted);font-size:12px;padding:10px 2px 30px}
+@media(min-width:760px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.maincols{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="pill">PAPER TRADING · KHÔNG KẾT NỐI VÍ</div>
+  <h1>🧭 MEME HUNTER BOT</h1>
+  <p>Quét token mới trên DEX Screener · mô phỏng mua/bán · không dùng tiền thật</p>
+</div></header>
+<main class="wrap">
+  <div class="notice"><b>Cảnh báo:</b> Đây là bản thử nghiệm chạy trên trình duyệt. Điểm số không chứng minh token an toàn. Bot không thể xác nhận chắc chắn honeypot/rug pull. Không nhập seed phrase, private key hoặc API key vào trang này.</div>
+  <section class="grid" style="margin-top:12px">
+    <div class="card"><div class="k">Số dư Demo</div><div class="v" id="balance">$100.00</div></div>
+    <div class="card"><div class="k">Giá trị danh mục</div><div class="v" id="equity">$100.00</div></div>
+    <div class="card"><div class="k">Lãi/lỗ đã thực hiện</div><div class="v" id="realized">$0.00</div></div>
+    <div class="card"><div class="k">Lệnh đang mở</div><div class="v" id="openCount">0</div></div>
+  </section>
+  <section class="card">
+    <b>Thiết lập quét & mô phỏng</b>
+    <div class="controls">
+      <div class="field"><label>Điểm vào lệnh tối thiểu</label><input id="minScore" type="number" min="40" max="100" value="75"></div>
+      <div class="field"><label>Thanh khoản tối thiểu (USD)</label><input id="minLiq" type="number" min="1000" value="20000"></div>
+      <div class="field"><label>Khối lượng 24h tối thiểu (USD)</label><input id="minVol" type="number" min="1000" value="20000"></div>
+    </div>
+    <div class="controls">
+      <button class="primary" id="scanBtn">Quét ngay</button>
+      <button id="autoBtn">Bật tự động Demo</button>
+      <button class="danger" id="resetBtn">Đặt lại Demo</button>
+    </div>
+    <div class="status" id="status">Chưa quét. Bấm “Quét ngay” để lấy dữ liệu công khai.</div>
+    <div class="small">Tự động Demo chỉ chạy khi trang đang mở và iPhone không đưa Safari vào trạng thái ngủ. Chu kỳ quét khoảng 60 giây.</div>
+  </section>
+  <div class="maincols">
+    <section class="card">
+      <b>Token được phát hiện</b>
+      <p class="small">Nguồn dữ liệu: DEX Screener public API. Mỗi token cần kiểm tra thủ công trước khi cân nhắc giao dịch thật.</p>
+      <div class="scroll"><table><thead><tr><th>Token / mạng</th><th>Giá</th><th>Thanh khoản</th><th>Vol 24h</th><th>Điểm</th><th></th></tr></thead><tbody id="tokens"><tr><td colspan="6">Chưa có dữ liệu</td></tr></tbody></table></div>
+    </section>
+    <section>
+      <section class="card">
+        <b>Lệnh Demo đang mở</b>
+        <div class="scroll"><table><thead><tr><th>Token</th><th>Giá vào</th><th>Giá hiện tại</th><th>P/L</th><th></th></tr></thead><tbody id="positions"><tr><td colspan="5">Chưa có lệnh</td></tr></tbody></table></div>
+      </section>
+      <section class="card">
+        <b>Lịch sử giao dịch Demo</b>
+        <div class="scroll"><table><thead><tr><th>Token</th><th>Kết quả</th><th>Thời gian</th></tr></thead><tbody id="history"><tr><td colspan="3">Chưa có giao dịch</td></tr></tbody></table></div>
+      </section>
+    </section>
+  </div>
+  <section class="card">
+    <b>Quy tắc Demo hiện tại</b>
+    <p>• Mỗi lệnh dùng tối đa $5 vốn ảo · tối đa 3 vị thế cùng lúc.</p>
+    <p>• Mô phỏng chốt lời +20%, cắt lỗ −10%, phí 0,30% mỗi chiều và trượt giá giả định 1% mỗi chiều.</p>
+    <p>• Điểm cơ hội dựa trên thanh khoản, volume, tuổi pool và tỷ lệ mua/bán. Không phải dự báo giá.</p>
+    <p>• Không tự mua token nếu thiếu giá, thiếu thanh khoản hoặc dữ liệu bất thường.</p>
+  </section>
+  <footer>Phiên bản 1.0 · Demo only · Dữ liệu có thể trễ hoặc thiếu. Không phải lời khuyên đầu tư. DEX Screener API có giới hạn truy cập; ứng dụng giảm tần suất gọi để tránh vượt giới hạn.</footer>
+</main>
+<script>
+const API='https://api.dexscreener.com';
+const STORE='memeHunterPaperV1';
+const DEFAULT={cash:100,realized:0,positions:[],history:[],seen:[]};
+let state=load(), latest=[], timer=null, busy=false;
+function load(){try{return {...DEFAULT,...JSON.parse(localStorage.getItem(STORE)||'{}')}}catch{return {...DEFAULT}}}
+function save(){localStorage.setItem(STORE,JSON.stringify(state));render()}
+function money(n){return '$'+Number(n||0).toFixed(2)}
+function short(s){return s&&s.length>13?s.slice(0,6)+'…'+s.slice(-4):(s||'—')}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function ageHours(ms){return ms?Math.max(0,(Date.now()-ms)/3600000):null}
+function score(p){
+ let liq=Number(p.liquidity?.usd||0), vol=Number(p.volume?.h24||0), buys=Number(p.txns?.h24?.buys||0), sells=Number(p.txns?.h24?.sells||0), age=ageHours(p.pairCreatedAt);
+ let s=0;
+ s+=liq>=100000?30:liq>=50000?25:liq>=20000?20:liq>=10000?10:0;
+ s+=vol>=100000?25:vol>=50000?20:vol>=20000?15:vol>=5000?8:0;
+ s+=(buys+sells)>=300?15:(buys+sells)>=100?10:(buys+sells)>=30?5:0;
+ s+=buys>sells*1.3?15:buys>sells?8:0;
+ s+=age!==null&&age>=0.08&&age<=24?15:age!==null&&age<=72?8:0;
+ return Math.min(100,s);
+}
+function meets(p){
+ return Number(p.liquidity?.usd||0)>=Number(document.getElementById('minLiq').value||20000)
+ && Number(p.volume?.h24||0)>=Number(document.getElementById('minVol').value||20000)
+ && Number(p.priceUsd||0)>0 && score(p)>=Number(document.getElementById('minScore').value||75);
+}
+async function getJson(url){let r=await fetch(url,{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);return r.json()}
+async function scan(){
+ if(busy)return;busy=true;document.getElementById('scanBtn').disabled=true;
+ document.getElementById('status').textContent='Đang lấy danh sách token mới…';
+ try{
+   const profiles=await getJson(API+'/token-profiles/latest/v1');
+   const list=(Array.isArray(profiles)?profiles:[]).slice(0,12);
+   const keys=new Set();let pairs=[];
+   for(const t of list){
+     if(!t.chainId||!t.tokenAddress)continue;
+     const key=t.chainId+':'+t.tokenAddress.toLowerCase();if(keys.has(key))continue;keys.add(key);
+     try{
+       const arr=await getJson(API+'/token-pairs/v1/'+encodeURIComponent(t.chainId)+'/'+encodeURIComponent(t.tokenAddress));
+       if(Array.isArray(arr))pairs.push(...arr.filter(x=>(x.baseToken?.address||'').toLowerCase()===t.tokenAddress.toLowerCase()).map(x=>({...x,_profileTokenAddress:t.tokenAddress})));
+     }catch(e){}
+     await new Promise(r=>setTimeout(r,180));
+   }
+   const best=new Map();
+   for(const p of pairs){
+     const addr=p._profileTokenAddress||p.baseToken?.address||p.quoteToken?.address;
+     const k=(p.chainId||'')+':'+(addr||'').toLowerCase();
+     if(!best.has(k)||(Number(p.liquidity?.usd||0)>Number(best.get(k).liquidity?.usd||0)))best.set(k,p);
+   }
+   latest=[...best.values()].map(p=>({...p,score:score(p)})).sort((a,b)=>b.score-a.score);
+   document.getElementById('status').textContent=`Đã quét ${list.length} hồ sơ, tìm thấy ${latest.length} pool. ${latest.filter(meets).length} token đạt bộ lọc hiện tại.`;
+   paperCycle();renderTokens();render();
+ }catch(e){document.getElementById('status').textContent='Không lấy được dữ liệu: '+e.message+'. Kiểm tra mạng hoặc thử lại sau.'}
+ finally{busy=false;document.getElementById('scanBtn').disabled=false}
+}
+function openPaper(p){
+ if(state.positions.length>=3)return;
+ const addr=p._profileTokenAddress||p.baseToken?.address, chain=p.chainId||'';
+ const key=chain+':'+addr;if(state.positions.some(x=>x.key===key))return;
+ const stake=5;if(state.cash<stake)return;
+ const price=Number(p.priceUsd);if(!price)return;
+ const entry=price*1.01*(1+0.003); // giả định trượt giá + phí khi mua
+ state.cash-=stake;
+ state.positions.push({key,chain,addr,name:p.baseToken?.symbol||p.quoteToken?.symbol||'TOKEN',url:p.url,stake,entry,price,opened:Date.now(),score:p.score});
+ state.seen.push(key);save();
+}
+function closePaper(pos,price,reason){
+ const exit=price*0.99*(1-0.003), units=pos.stake/pos.entry, proceeds=units*exit, pnl=proceeds-pos.stake;
+ state.cash+=proceeds;state.realized+=pnl;
+ state.history.unshift({name:pos.name,pnl,reason,time:Date.now()});state.history=state.history.slice(0,40);
+ state.positions=state.positions.filter(x=>x.key!==pos.key);
+}
+function paperCycle(){
+ for(const p of latest){
+   if(!meets(p))continue;
+   if(!state.seen.includes((p.chainId||'')+':'+(p._profileTokenAddress||p.baseToken?.address||'').toLowerCase())&&state.positions.length<3)openPaper(p);
+ }
+ for(const pos of [...state.positions]){
+   const p=latest.find(x=>(x.chainId||'')+':'+(x.baseToken?.address||'').toLowerCase()===pos.key);
+   if(!p)continue;
+   const price=Number(p.priceUsd);pos.price=price;
+   const change=(price/pos.entry)-1;
+   if(change>=0.20)closePaper(pos,price,'Take profit');
+   else if(change<=-0.10)closePaper(pos,price,'Stop loss');
+ }
+ save();
+}
+function renderTokens(){
+ const el=document.getElementById('tokens');
+ const rows=latest.slice(0,30);
+ if(!rows.length){el.innerHTML='<tr><td colspan="6">Chưa có dữ liệu</td></tr>';return}
+ el.innerHTML=rows.map((p,i)=>{
+ const name=esc(p.baseToken?.symbol||p.quoteToken?.symbol||'TOKEN'), chain=esc(p.chainId||'?'), price=Number(p.priceUsd||0),liq=Number(p.liquidity?.usd||0),vol=Number(p.volume?.h24||0),s=p.score;
+ const ok=meets(p), url=esc(p.url||'#');
+ return `<tr><td><span class="token">${name}</span><br><span class="small">${chain} · ${short(p.baseToken?.address||'')}</span></td><td>${price?money(price):'—'}</td><td>${money(liq)}</td><td>${money(vol)}</td><td class="${s>=75?'good':'warn'}">${s}/100</td><td><button ${!ok?'disabled':''} data-buy="${i}">Mua Demo</button><br><a class="small" href="${url}" target="_blank" rel="noopener">DEX</a></td></tr>`;
+ }).join('');
+ el.querySelectorAll('[data-buy]').forEach(b=>b.addEventListener('click',()=>openPaper(latest[Number(b.dataset.buy)])));
+}
+function render(){
+ const mtm=state.positions.reduce((a,p)=>a+p.stake*(Number(p.price||p.entry)/p.entry),0);
+ document.getElementById('balance').textContent=money(state.cash);
+ document.getElementById('equity').textContent=money(state.cash+mtm);
+ document.getElementById('realized').textContent=money(state.realized);
+ document.getElementById('realized').className='v '+(state.realized>=0?'good':'bad');
+ document.getElementById('openCount').textContent=state.positions.length;
+ document.getElementById('positions').innerHTML=state.positions.length?state.positions.map(p=>{
+ const pnl=(Number(p.price||p.entry)/p.entry-1)*100;
+ return `<tr><td>${esc(p.name)}<br><span class="small">${esc(p.chain)}</span></td><td>${money(p.entry)}</td><td>${money(p.price)}</td><td class="${pnl>=0?'good':'bad'}">${pnl.toFixed(2)}%</td><td><button data-sell="${esc(p.key)}">Bán</button></td></tr>`;
+ }).join(''):'<tr><td colspan="5">Chưa có lệnh</td></tr>';
+ document.querySelectorAll('[data-sell]').forEach(b=>b.addEventListener('click',()=>{const p=state.positions.find(x=>x.key===b.dataset.sell);if(p)closePaper(p,p.price||p.entry,'Bán thủ công');save()}));
+ document.getElementById('history').innerHTML=state.history.length?state.history.map(h=>`<tr><td>${esc(h.name)}</td><td class="${h.pnl>=0?'good':'bad'}">${money(h.pnl)}<br><span class="small">${esc(h.reason)}</span></td><td>${new Date(h.time).toLocaleString('vi-VN')}</td></tr>`).join(''):'<tr><td colspan="3">Chưa có giao dịch</td></tr>';
+}
+document.getElementById('scanBtn').addEventListener('click',scan);
+document.getElementById('autoBtn').addEventListener('click',()=>{
+ if(timer){clearInterval(timer);timer=null;document.getElementById('autoBtn').textContent='Bật tự động Demo';document.getElementById('status').textContent='Đã tắt tự động Demo.'}
+ else{scan();timer=setInterval(scan,60000);document.getElementById('autoBtn').textContent='Tắt tự động Demo';document.getElementById('status').textContent='Đã bật tự động Demo. Giữ trang mở để tiếp tục.'}
+});
+document.getElementById('resetBtn').addEventListener('click',()=>{if(confirm('Xóa toàn bộ lịch sử và đặt lại vốn Demo $100?')){if(timer){clearInterval(timer);timer=null}state={...DEFAULT,positions:[],history:[],seen:[]};save();renderTokens();document.getElementById('autoBtn').textContent='Bật tự động Demo';document.getElementById('status').textContent='Đã đặt lại tài khoản Demo.'}});
+render();
+</script>
+</body></html>
