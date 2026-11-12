@@ -44,6 +44,7 @@ footer{color:var(--muted);font-size:12px;padding:10px 2px 30px}
   </section>
   <section class="card">
     <b>Thiết lập quét & mô phỏng</b>
+    <p class="small">Quy tắc hiện tại: chốt lời +100% · cắt lỗ −10% (Demo only).</p>
     <div class="controls">
       <div class="field"><label>Điểm vào lệnh tối thiểu</label><input id="minScore" type="number" min="40" max="100" value="75"></div>
       <div class="field"><label>Thanh khoản tối thiểu (USD)</label><input id="minLiq" type="number" min="1000" value="20000"></div>
@@ -77,7 +78,7 @@ footer{color:var(--muted);font-size:12px;padding:10px 2px 30px}
   <section class="card">
     <b>Quy tắc Demo hiện tại</b>
     <p>• Mỗi lệnh dùng tối đa $5 vốn ảo · tối đa 3 vị thế cùng lúc.</p>
-    <p>• Mô phỏng chốt lời +20%, cắt lỗ −10%, phí 0,30% mỗi chiều và trượt giá giả định 1% mỗi chiều.</p>
+    <p>• Mô phỏng chốt lời +100%, cắt lỗ −10%, phí 0,30% mỗi chiều và trượt giá giả định 1% mỗi chiều.</p>
     <p>• Điểm cơ hội dựa trên thanh khoản, volume, tuổi pool và tỷ lệ mua/bán. Không phải dự báo giá.</p>
     <p>• Không tự mua token nếu thiếu giá, thiếu thanh khoản hoặc dữ liệu bất thường.</p>
   </section>
@@ -165,8 +166,8 @@ function paperCycle(){
    if(!p)continue;
    const price=Number(p.priceUsd);pos.price=price;
    const change=(price/pos.entry)-1;
-   if(change>=0.20)closePaper(pos,price,'Take profit');
-   else if(change<=-0.10)closePaper(pos,price,'Stop loss');
+   if(change>=1.00)closePaper(pos,price,'Take profit +100%');
+   else if(change<=-0.10)closePaper(pos,price,'Stop loss -10%');
  }
  save();
 }
